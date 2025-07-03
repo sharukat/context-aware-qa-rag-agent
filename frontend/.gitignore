@@ -1,0 +1,7 @@
+.next/*
+qdrant/*
+uploads/*
+.env.local
+node_modules
+venv
+backend/__pycache__
