@@ -28,16 +28,12 @@ server_params = StdioServerParameters(
 async def agent(question: str):
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
-            # Initialize the connection
             await session.initialize()
-
-            # Get tools
             tools = await load_mcp_tools(session)
-
-            # Create and run the agent
             agent = create_react_agent(llm, tools)
             message = {"messages": [{"role": "user", "content": question}]}
 
-            # Collect all messages to get the final response
-            async for chunk in agent.astream(message, stream_mode="values"):
-                    yield chunk["messages"][-1].content
+            async for chunk in agent.astream(message, stream_mode="messages"):
+                message = chunk[0]
+                yield (message.content, True if hasattr(message, "tool_call_id") else False)
+                

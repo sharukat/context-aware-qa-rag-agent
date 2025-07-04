@@ -13,16 +13,32 @@ router = APIRouter(
 class MCPRequest(BaseModel):
     question: str
 
-@router.post('/')
+@router.post('/stocks')
 async def stocks_mcp(request: MCPRequest):
     async def generate_response():
-        async for chunk in agent(request.question):
+        urls = []
+        async for chunk, isTool in agent(request.question):
             if chunk:
-                yield f"data: {json.dumps({'content': chunk})}\n\n"
-    
+                if isTool:
+                    # This is a tool call result (URLs)
+                    try:
+                        chunk_dict = json.loads(chunk)
+                        if isinstance(chunk_dict, dict) and "results" in chunk_dict:
+                            for result in chunk_dict["results"][:3]:
+                                urls.append({"title": result["title"], "url": result["url"]})
+                    except json.JSONDecodeError:
+                        pass
+                else:
+                    # This is the final response content
+                    yield f"data: {json.dumps({'content': chunk})}\n\n"
+        
+        # Send URLs at the end
+        if urls:
+            yield f"data: {json.dumps({'urls': urls})}\n\n"
+            
     return StreamingResponse(
         generate_response(),
-        media_type="text/plain",
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",

@@ -34,7 +34,7 @@ export async function uploadFiles(files: File[]): Promise<{ message?: string; fi
 /**
  * Fetches context for a given question from the backend.
  */
-export async function fetchContext(question: string, signal?: AbortSignal): Promise<string> {
+export async function fetchContext(question: string, signal?: AbortSignal): Promise<{context: string, urls?: {title: string, url: string}[]}> {
   const response = await fetch(`${config.API_URL}/api/getdocuments`, {
     method: "POST",
     mode: "cors",
@@ -44,15 +44,20 @@ export async function fetchContext(question: string, signal?: AbortSignal): Prom
   });
   if (!response.ok) throw new Error("Failed to fetch context");
   const data = await response.json();
-  if (data.response) return data.response;
+  if (data.response) {
+    return {
+      context: data.response,
+      urls: data.urls || []
+    };
+  }
   throw new Error("No relevant context found");
 }
 
 /**
  * Send question to the backend to use stock tools via MCP server tools
  */
-export async function streamMcpAnswer(question:string) {
-  const response = await fetch(`${config.API_URL}/mcp`, {
+export async function streamMcpAnswer(question: string, endpoint: string) {
+  const response = await fetch(`${config.API_URL}${endpoint}`, {
     method: "POST",
     mode: "cors",
     headers: { "Content-Type": "application/json" },
@@ -74,13 +79,8 @@ export async function streamMcpAnswer(question:string) {
         partial = parts.pop() || '';
         for (const part of parts) {
           if (part.startsWith('data:')) {
-            try {
-              const json = JSON.parse(part.replace('data: ', '').replace('data:', ''));
-              yield json.content;
-            } catch {
-              // fallback: yield raw part
-              yield part;
-            }
+            // Yield the raw JSON string for parsing in the hook
+            yield part.replace('data: ', '').replace('data:', '');
           }
         }
       }

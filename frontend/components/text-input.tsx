@@ -1,43 +1,40 @@
 "use client";
 
 
-import { Button, addToast } from "@heroui/react";
-import { useCallback, useContext, useReducer, useState } from "react";
+import { Button, addToast, Tabs, Tab } from "@heroui/react";
+import { useCallback, useContext, useState } from "react";
 import { Message } from "../lib/typings";
 import ChatContext from "../contexts/chat-context";
-import { IconArrowUp, IconTool, IconFileText } from "@tabler/icons-react";
+import { IconArrowUp, IconTool, IconFileText, IconGlobe } from "@tabler/icons-react";
 import FileUpload from "./file-upload";
 import { uploadFiles } from "../lib/api"; // adjust path as needed
 
-interface State {
-    toolCall: boolean;
-    rag: boolean;
-}
-
-type ToolAction =
-    | { type: 'SET_TOOL_CALL'; value: boolean }
-    | { type: 'SET_RAG'; value: boolean };
-
-const toolReducer = (state: State, action: ToolAction): State => {
-    switch (action.type) {
-        case 'SET_TOOL_CALL':
-            return { toolCall: action.value, rag: action.value ? false : state.rag };
-        case 'SET_RAG':
-            return { rag: action.value, toolCall: action.value ? false : state.toolCall };
-        default:
-            return state;
+const TABS = [
+    {
+        key: "tools",
+        title: "Stock Tool",
+        icon: <IconTool />,
+    },
+    {
+        key: "rag",
+        title: "Document Chat",
+        icon: <IconFileText />,
+    },
+    {
+        key: "search",
+        title: "Web Search",
+        icon: <IconGlobe />,
     }
-};
+];
 
 export default function TextInput() {
     const context = useContext(ChatContext);
-    const [toolState, dispatchTool] = useReducer(toolReducer, { toolCall: false, rag: false });
     const [dbLoading, setDbLoading] = useState(false);
+    const [option, setOption] = useState("tools");
     const [files, setFiles] = useState<File[]>([]);
 
     const handleFileUpload = async (files: File[]) => {
         setFiles(files);
-        console.log(files);
         
         // Automatically upload files to DB when selected
         if (files.length > 0) {
@@ -64,7 +61,6 @@ export default function TextInput() {
     const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Only proceed with generation if there's text input
         if (!context.input.trim()) return;
 
         const newUserMessage: Message = {
@@ -73,23 +69,17 @@ export default function TextInput() {
         };
         const updatedMessages = [...context.messages, newUserMessage];
         context.dispatch({ type: 'SET_MESSAGES', messages: updatedMessages });
-        let state = "tools"
-        if (toolState.rag) {
-            state = "rag"
-        } else if (toolState.toolCall) {
-            state = "tools"
-        }
 
         try {
-            await context.generateAnswer(updatedMessages, state);
-            // Update history after generating answer
+            await context.generateAnswer(updatedMessages, option);
             if (context.activeChatId) {
                 context.updateHistory(context.activeChatId);
             }
         } catch (error) {
             console.error("Error generating response:", error);
         }
-    }, [context, context.activeChatId]);
+    }, [context, context.activeChatId, option]);
+
     return (
         <form
             onSubmit={handleSubmit}
@@ -115,32 +105,28 @@ export default function TextInput() {
                     }}
                 />
                 <div className="flex flex-row justify-between items-center p-2">
+                    <Tabs
+                        aria-label="Options"
+                        color="primary"
+                        variant="bordered"
+                        radius="full"
+                        selectedKey={option}
+                        onSelectionChange={(key) => setOption(String(key))}
+                    >
+                        {TABS.map((tab) => (
+                            <Tab
+                                key={tab.key}
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        {tab.icon}
+                                        <span>{tab.title}</span>
+                                    </div>
+                                }
+                            />
+                        ))}
+                    </Tabs>
                     <div className="z-10 flex flex-row gap-2">
-                        <Button
-                            className="font-semibold"
-                            size="sm"
-                            color={toolState.toolCall ? "primary" : "default"}
-                            radius="full"
-                            startContent={<IconTool />}
-                            variant="flat"
-                            onPress={() => dispatchTool({ type: 'SET_TOOL_CALL', value: !toolState.toolCall })}
-                        >
-                            Stocks Tool
-                        </Button>
-                        <Button
-                            className="font-semibold"
-                            size="sm"
-                            color={toolState.rag ? "primary" : "default"}
-                            radius="full"
-                            startContent={<IconFileText />}
-                            variant="flat"
-                            onPress={() => dispatchTool({ type: 'SET_RAG', value: !toolState.rag })}
-                        >
-                            Document Chat
-                        </Button>
-                    </div>
-                    <div className="z-10 flex flex-row gap-2">
-                        <FileUpload state={!toolState.rag} onChange={handleFileUpload} isLoading={dbLoading} />
+                        <FileUpload state={option !== "rag"} onChange={handleFileUpload} isLoading={dbLoading} />
                         <Button
                             className="z-10 bg-gray-900"
                             isLoading={context.isLoading}

@@ -10,7 +10,13 @@ export const Messages = ({messages}: MessagesProps) => {
         <div>
             {messages.length !== 0 && (
                 messages.map((message, i) => (
-                    <Message key={i} id={i} content={message.content} isUserMessage={message.role === "user"}/>
+                    <Message 
+                        key={i} 
+                        id={i} 
+                        content={message.content} 
+                        isUserMessage={message.role === "user"}
+                        references={message.references}
+                    />
                 ))
             )}
         </div>

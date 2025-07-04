@@ -76,8 +76,11 @@ export const useAnswerGeneration = () => {
 
           // Context Retrieval
           let context = "No relevant context found.";
+          let rag_urls: {title: string, url: string}[] = [];
           try {
-            context = await fetchContext(hydeText);
+            const contextData = await fetchContext(hydeText);
+            context = contextData.context;
+            rag_urls = contextData.urls || [];
           } catch {
             addToast({ title: "Failed to get response from server" });
           }
@@ -101,26 +104,97 @@ export const useAnswerGeneration = () => {
                 index === messagesRef.current.length - 1 ? { ...msg, content: fullResponse } : msg
               )
             });
+          }
 
+          // Add references if URLs are available
+          if (rag_urls.length > 0) {
+            const references = rag_urls.map(item => ({
+              title: item.title,
+              url: item.url
+            }));
+            
+            dispatch({
+              type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
+                index === messagesRef.current.length - 1 ? { ...msg, references } : msg
+              )
+            });
           }
           break
 
         case "tools":
-          const tool_response = await streamMcpAnswer(lastMessage);
+          const tool_response = await streamMcpAnswer(lastMessage, "/mcp/stocks");
 
           const assistMessage: Message = { role: "assistant", content: "" };
           dispatch({ type: 'ADD_MESSAGE', message: assistMessage });
 
           let full_response = "";
           for await (const chunk of tool_response.textStream()) {
-            full_response += chunk;
-            await delay(30);
-            dispatch({
-              type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                index === messagesRef.current.length - 1 ? { ...msg, content: full_response } : msg
-              )
-            });
+            let parsed: any;
+            try {
+              parsed = JSON.parse(chunk);
+            } catch {
+              parsed = {};
+            }
+            if (parsed.content) {
+              full_response += parsed.content;
+              await delay(30);
+              dispatch({
+                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
+                  index === messagesRef.current.length - 1 ? { ...msg, content: full_response } : msg
+                )
+              });
+            }
           }
+
+          break
+        case "search":
+          const search_response = await streamMcpAnswer(lastMessage, "/mcp/search");
+
+          const assist_Message: Message = { role: "assistant", content: "" };
+          dispatch({ type: 'ADD_MESSAGE', message: assist_Message });
+
+          let full_Response = "";
+          let urls: { title: string, url: string }[] = [];
+          for await (const chunk of search_response.textStream()) {
+            let parsed: any;
+            try {
+              parsed = JSON.parse(chunk);
+            } catch {
+              parsed = {};
+            }
+
+            if (parsed.urls) {
+              urls = parsed.urls;
+              // Optionally, update state/UI with URLs here
+            } else if (parsed.content) {
+              full_Response += parsed.content;
+              await delay(30);
+              dispatch({
+                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
+                  index === messagesRef.current.length - 1 ? { ...msg, content: full_Response } : msg
+                )
+              });
+            }
+          }
+
+          // Fetch titles for URLs and update the message with references
+          if (urls.length > 0) {
+            try {
+              const references = urls.map(item => ({
+                title: item.title,
+                url: item.url
+              }));
+              dispatch({
+                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
+                  index === messagesRef.current.length - 1 ? { ...msg, references } : msg
+                )
+              });
+            } catch (error) {
+              console.error('Error fetching titles for URLs:', error);
+            }
+          }
+
+          console.log("Final URLs:", urls);
           break
         default:
           console.log("Default")

@@ -10,6 +10,8 @@ from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from langchain_qdrant import FastEmbedSparse
 from langchain_nomic import NomicEmbeddings
 
+logger = logging.getLogger(__name__)
+
 # Load environment variables
 load_dotenv(dotenv_path="../.env")
 os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")
@@ -44,7 +46,8 @@ def retrieve_documents(question: str) -> List[Document]:
     c_retriever = contextual_compression.ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
-
     prefixed_question = f"search_query: {question}"
     reranked_docs = c_retriever.invoke(prefixed_question)
-    return repack_documents(reranked_docs)
+    filtered_docs = [doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.2]
+    logger.info(filtered_docs)
+    return repack_documents(filtered_docs)
