@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from .models import QuestionRequest, ContextResponse
 from .service import retrieve_documents
@@ -16,15 +17,23 @@ router = APIRouter(
 async def get_documents(request: QuestionRequest):
     docs = retrieve_documents(request.question)
     logger.info(f"Length of docs: {len(docs)}")
+    citations = []
+    cite_hash = set()
     if docs:
-        joined_content = "\n".join([doc.page_content for doc in docs])
-        return ContextResponse(response=joined_content)
+        page_contents = []
+        for doc in docs:
+            key = (Path(doc.metadata["source"]).name, doc.metadata["page"])
+            if key not in cite_hash:
+                citations.append({"title": key[0], "citation": str(key[1])})
+                cite_hash.add(key)
+            page_contents.append(doc.page_content)
+        joined_content = "\n".join(page_contents)
+        logger.info(citations)
+        return ContextResponse(response=joined_content, citations=citations)
     else:
         # Use web search when no documents are found
         try:
             full_response = ""
-            urls = []
-            
             async for chunk, is_tool in agent(request.question):
                 if chunk:
                     if is_tool:
@@ -32,13 +41,12 @@ async def get_documents(request: QuestionRequest):
                             chunk_dict = json.loads(chunk)
                             if isinstance(chunk_dict, dict) and "results" in chunk_dict:
                                 for result in chunk_dict["results"][:3]:
-                                    urls.append({"title": result["title"], "url": result["url"]})
+                                    citations.append({"title": result["title"], "citation": result["url"]})
                         except json.JSONDecodeError:
                             logger.warning(f"Failed to parse tool call content: {chunk}")
                     else:
                         full_response += chunk
-            logger.info(urls)
-            return ContextResponse(response=full_response, urls=urls)
+            return ContextResponse(response=full_response, citations=citations)
         except Exception as e:
             logger.error(f"Error in web search: {e}")
             raise HTTPException(status_code=500, detail="Error performing web search")

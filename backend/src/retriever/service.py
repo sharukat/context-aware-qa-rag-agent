@@ -48,6 +48,5 @@ def retrieve_documents(question: str) -> List[Document]:
     )
     prefixed_question = f"search_query: {question}"
     reranked_docs = c_retriever.invoke(prefixed_question)
-    filtered_docs = [doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.2]
-    logger.info(filtered_docs)
+    filtered_docs = [doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.1]
     return repack_documents(filtered_docs)

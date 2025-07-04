@@ -1,11 +1,12 @@
 export interface Reference {
-  url: string;
+  citation: string;
   title: string;
 }
 
 export interface Message {
     role: 'user' | 'assistant';
     content: string;
+    service?: string;
     references?: Reference[];
   }
 

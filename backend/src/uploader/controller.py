@@ -3,8 +3,10 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, status
 from typing import List
 from .models import UploadResponse
 from .service import VectorDB
+from src.utils.utils import clean_folder
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+QDRANT_FOLDER = os.path.join(os.getcwd(), "qdrant")
 
 router = APIRouter(
     prefix="/api",
@@ -16,8 +18,14 @@ async def vectordb(files: List[UploadFile] = File(...)):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")
 
+    # Clean uploads and qdrant folders
+    for folder in [UPLOAD_FOLDER, QDRANT_FOLDER]:
+        if os.path.exists(folder):
+            clean_folder(folder)
+        else:
+            os.makedirs(folder, exist_ok=True)
+
     uploaded_files = []
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     for file in files:
         if not file.filename:

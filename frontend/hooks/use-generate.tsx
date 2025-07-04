@@ -76,11 +76,11 @@ export const useAnswerGeneration = () => {
 
           // Context Retrieval
           let context = "No relevant context found.";
-          let rag_urls: {title: string, url: string}[] = [];
+          let rag_urls: {title: string, citation: string}[] = [];
           try {
             const contextData = await fetchContext(hydeText);
             context = contextData.context;
-            rag_urls = contextData.urls || [];
+            rag_urls = contextData.citations || [];
           } catch {
             addToast({ title: "Failed to get response from server" });
           }
@@ -92,7 +92,7 @@ export const useAnswerGeneration = () => {
             lastMessage,
           });
 
-          const assistantMessage: Message = { role: "assistant", content: "" };
+          const assistantMessage: Message = { role: "assistant", content: "", service: service };
           dispatch({ type: 'ADD_MESSAGE', message: assistantMessage });
 
           let fullResponse = "";
@@ -105,12 +105,13 @@ export const useAnswerGeneration = () => {
               )
             });
           }
+          console.log(rag_urls)
 
           // Add references if URLs are available
           if (rag_urls.length > 0) {
             const references = rag_urls.map(item => ({
               title: item.title,
-              url: item.url
+              citation: item.citation
             }));
             
             dispatch({
@@ -124,7 +125,7 @@ export const useAnswerGeneration = () => {
         case "tools":
           const tool_response = await streamMcpAnswer(lastMessage, "/mcp/stocks");
 
-          const assistMessage: Message = { role: "assistant", content: "" };
+          const assistMessage: Message = { role: "assistant", content: "", service: service };
           dispatch({ type: 'ADD_MESSAGE', message: assistMessage });
 
           let full_response = "";
@@ -150,11 +151,11 @@ export const useAnswerGeneration = () => {
         case "search":
           const search_response = await streamMcpAnswer(lastMessage, "/mcp/search");
 
-          const assist_Message: Message = { role: "assistant", content: "" };
+          const assist_Message: Message = { role: "assistant", content: "", service: service };
           dispatch({ type: 'ADD_MESSAGE', message: assist_Message });
 
           let full_Response = "";
-          let urls: { title: string, url: string }[] = [];
+          let urls: { title: string, citation: string }[] = [];
           for await (const chunk of search_response.textStream()) {
             let parsed: any;
             try {
@@ -163,8 +164,9 @@ export const useAnswerGeneration = () => {
               parsed = {};
             }
 
-            if (parsed.urls) {
-              urls = parsed.urls;
+            if (parsed.citations) {
+              console.log(parsed.citation)
+              urls = parsed.citations;
               // Optionally, update state/UI with URLs here
             } else if (parsed.content) {
               full_Response += parsed.content;
@@ -182,7 +184,7 @@ export const useAnswerGeneration = () => {
             try {
               const references = urls.map(item => ({
                 title: item.title,
-                url: item.url
+                citation: item.citation
               }));
               dispatch({
                 type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>

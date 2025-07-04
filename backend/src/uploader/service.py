@@ -1,13 +1,16 @@
 import os
+import logging
 from typing import List
 from dotenv import load_dotenv
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from src.utils.text_splitter import SemanticChunker
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, PDFPlumberLoader
 from langchain_community.document_loaders import UnstructuredHTMLLoader
 from langchain_core.documents import Document
 from langchain_qdrant import FastEmbedSparse
 from langchain_nomic import NomicEmbeddings
+
+logger = logging.getLogger(__name__)
 
 load_dotenv(dotenv_path="../.env")
 os.environ["NOMIC_API_KEY"] = os.getenv("NOMIC_API_KEY")
@@ -47,7 +50,7 @@ class VectorDB:
                     continue
 
                 if filename.lower().endswith('.pdf'):
-                    loader = PyPDFLoader(file_path)
+                    loader = PDFPlumberLoader(file_path)
                     documents = loader.load()
                     all_documents.extend(documents)
                 elif filename.lower().endswith('.html'):

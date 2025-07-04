@@ -26,12 +26,12 @@ async def search_mcp(request: MCPRequest):
                 chunk_dict = json.loads(chunk)
                 if isinstance(chunk_dict, dict) and "results" in chunk_dict:
                     for result in chunk_dict["results"][:3]:
-                        urls.append({"title": result["title"], "url": result["url"]})
+                        urls.append({"title": result["title"], "citation": result["url"]})
             if chunk and isTool is False:
                 yield f"data: {json.dumps({'content': chunk})}\n\n"
         if urls:
-            yield f"data: {json.dumps({'urls': urls})}\n\n"
-
+            yield f"data: {json.dumps({'citations': urls})}\n\n"
+        logger.info(urls)
     return StreamingResponse(
         generate_response(),
         media_type="text/event-stream",

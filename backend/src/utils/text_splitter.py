@@ -88,7 +88,7 @@ BreakpointThresholdType = Literal[
     "percentile", "standard_deviation", "interquartile", "gradient"
 ]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
-    "percentile": 95,
+    "percentile": 90,
     "standard_deviation": 3,
     "interquartile": 1.5,
     "gradient": 95,

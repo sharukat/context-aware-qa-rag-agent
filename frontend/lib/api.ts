@@ -34,7 +34,7 @@ export async function uploadFiles(files: File[]): Promise<{ message?: string; fi
 /**
  * Fetches context for a given question from the backend.
  */
-export async function fetchContext(question: string, signal?: AbortSignal): Promise<{context: string, urls?: {title: string, url: string}[]}> {
+export async function fetchContext(question: string, signal?: AbortSignal): Promise<{ context: string, citations?: { title: string, citation: string }[] }> {
   const response = await fetch(`${config.API_URL}/api/getdocuments`, {
     method: "POST",
     mode: "cors",
@@ -47,7 +47,7 @@ export async function fetchContext(question: string, signal?: AbortSignal): Prom
   if (data.response) {
     return {
       context: data.response,
-      urls: data.urls || []
+      citations: data.citations || []
     };
   }
   throw new Error("No relevant context found");

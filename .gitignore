@@ -6,7 +6,7 @@ frontend/node_modules
 
 # ======= Backend =======
 # Python-generated files
-**/__pycache__/
+__pycache__/
 backend/*.py[oc]
 backend/build/
 backend/dist/

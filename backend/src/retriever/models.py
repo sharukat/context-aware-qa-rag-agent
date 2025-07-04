@@ -6,8 +6,8 @@ class QuestionRequest(BaseModel):
     
 class Reference(BaseModel):
     title: str
-    url: str
+    citation: str
     
 class ContextResponse(BaseModel):
     response: str
-    urls: Optional[List[Reference]] = None
+    citations: Optional[List[Reference]] = None

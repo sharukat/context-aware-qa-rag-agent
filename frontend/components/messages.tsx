@@ -16,6 +16,7 @@ export const Messages = ({messages}: MessagesProps) => {
                         content={message.content} 
                         isUserMessage={message.role === "user"}
                         references={message.references}
+                        service={message.service}
                     />
                 ))
             )}
