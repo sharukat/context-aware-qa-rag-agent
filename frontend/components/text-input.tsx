@@ -47,7 +47,7 @@ export default function TextInput() {
                 }
 
                 setFiles([]);
-                addToast({ title: "Vector database created." });
+                addToast({ title: "Vector database created.", color: "success" });
                 context.setDbStatus(true);
             } catch (error) {
                 console.error('Error uploading files:', error);

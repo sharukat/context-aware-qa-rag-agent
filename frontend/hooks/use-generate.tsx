@@ -3,8 +3,7 @@ import { Message, History } from "../lib/typings";
 import { v4 } from 'uuid';
 import { addToast } from "@heroui/react";
 import { generateHydeText, fetchContext, streamAnswer, streamMcpAnswer } from '../lib/api';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { addAssistantMessage, updateLastMessage, streamAndUpdate } from "@/lib/utils";
 
 // State and actions for useReducer
 interface State {
@@ -76,7 +75,7 @@ export const useAnswerGeneration = () => {
 
           // Context Retrieval
           let context = "No relevant context found.";
-          let rag_urls: {title: string, citation: string}[] = [];
+          let rag_urls: { title: string, citation: string }[] = [];
           try {
             const contextData = await fetchContext(hydeText);
             context = contextData.context;
@@ -92,32 +91,23 @@ export const useAnswerGeneration = () => {
             lastMessage,
           });
 
-          const assistantMessage: Message = { role: "assistant", content: "", service: service };
-          dispatch({ type: 'ADD_MESSAGE', message: assistantMessage });
+          // Add initial empty message for the role "assistant"
+          addAssistantMessage(dispatch, service)
 
-          let fullResponse = "";
-          for await (const chunk of response.textStream) {
-            fullResponse += chunk;
-            await delay(30);
-            dispatch({
-              type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                index === messagesRef.current.length - 1 ? { ...msg, content: fullResponse } : msg
-              )
-            });
-          }
-          console.log(rag_urls)
+          // Update the message with content while streaming
+          await streamAndUpdate({
+            stream: response.textStream,
+            onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
+            service: service
+          })
 
-          // Add references if URLs are available
+          // Update the message with resource citations
           if (rag_urls.length > 0) {
-            const references = rag_urls.map(item => ({
-              title: item.title,
-              citation: item.citation
-            }));
-            
-            dispatch({
-              type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                index === messagesRef.current.length - 1 ? { ...msg, references } : msg
-              )
+            updateLastMessage(dispatch, messagesRef, {
+              references: rag_urls.map(item => ({
+                title: item.title,
+                citation: item.citation,
+              })),
             });
           }
           break
@@ -125,84 +115,46 @@ export const useAnswerGeneration = () => {
         case "tools":
           const tool_response = await streamMcpAnswer(lastMessage, "/mcp/stocks");
 
-          const assistMessage: Message = { role: "assistant", content: "", service: service };
-          dispatch({ type: 'ADD_MESSAGE', message: assistMessage });
+          // Add initial empty message for the role "assistant"
+          addAssistantMessage(dispatch, service)
 
-          let full_response = "";
-          for await (const chunk of tool_response.textStream()) {
-            let parsed: any;
-            try {
-              parsed = JSON.parse(chunk);
-            } catch {
-              parsed = {};
-            }
-            if (parsed.content) {
-              full_response += parsed.content;
-              await delay(30);
-              dispatch({
-                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                  index === messagesRef.current.length - 1 ? { ...msg, content: full_response } : msg
-                )
-              });
-            }
-          }
-
+          // Update the message with content while streaming
+          await streamAndUpdate({
+            stream: tool_response.textStream(),
+            onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
+            service: service
+          })
           break
+
         case "search":
           const search_response = await streamMcpAnswer(lastMessage, "/mcp/search");
 
-          const assist_Message: Message = { role: "assistant", content: "", service: service };
-          dispatch({ type: 'ADD_MESSAGE', message: assist_Message });
+          // Add initial empty message for the role "assistant"
+          addAssistantMessage(dispatch, service)
 
-          let full_Response = "";
-          let urls: { title: string, citation: string }[] = [];
-          for await (const chunk of search_response.textStream()) {
-            let parsed: any;
-            try {
-              parsed = JSON.parse(chunk);
-            } catch {
-              parsed = {};
-            }
+          // Extract the citations and update the message with content while streaming
+          const { citations } = await streamAndUpdate({
+            stream: search_response.textStream(),
+            onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
+            service: service
+          }) as { citations: { title: string; citation: string }[] };
 
-            if (parsed.citations) {
-              console.log(parsed.citation)
-              urls = parsed.citations;
-              // Optionally, update state/UI with URLs here
-            } else if (parsed.content) {
-              full_Response += parsed.content;
-              await delay(30);
-              dispatch({
-                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                  index === messagesRef.current.length - 1 ? { ...msg, content: full_Response } : msg
-                )
-              });
-            }
-          }
-
-          // Fetch titles for URLs and update the message with references
-          if (urls.length > 0) {
-            try {
-              const references = urls.map(item => ({
+          // Update the message with resource citations
+          if (citations.length > 0) {
+            updateLastMessage(dispatch, messagesRef, {
+              references: citations.map(item => ({
                 title: item.title,
-                citation: item.citation
-              }));
-              dispatch({
-                type: 'SET_MESSAGES', messages: messagesRef.current.map((msg, index) =>
-                  index === messagesRef.current.length - 1 ? { ...msg, references } : msg
-                )
-              });
-            } catch (error) {
-              console.error('Error fetching titles for URLs:', error);
-            }
+                citation: item.citation,
+              })),
+            });
           }
-
-          console.log("Final URLs:", urls);
           break
+
         default:
           console.log("Default")
       }
 
-      addToast({ title: "Answer Generation Successful" });
+      addToast({ title: "Answer Generation Successful", color: "success" });
     } catch (error) {
       console.error("Submission error:", error);
     } finally {
