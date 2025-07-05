@@ -28,3 +28,9 @@ dependencies = [
     "uvicorn>=0.35.0",
     "yfinance>=0.2.64",
 ]
+
+[tool.uv.workspace]
+members = [
+    "microservices/stockes_service",
+    "microservices/file_upload_service",
+]

@@ -1,8 +1,7 @@
 import { useReducer, useCallback, useRef, useEffect } from "react";
 import { Message, History } from "../lib/typings";
-import { v4 } from 'uuid';
 import { addToast } from "@heroui/react";
-import { generateHydeText, fetchContext, streamAnswer, streamMcpAnswer } from '../lib/api';
+import { streamMcpAnswer } from '../lib/api';
 import { addAssistantMessage, updateLastMessage, streamAndUpdate } from "@/lib/utils";
 
 // State and actions for useReducer
@@ -64,47 +63,50 @@ export const useAnswerGeneration = () => {
     messagesRef.current = state.messages;
   }, [state.messages]);
 
-  const generateAnswer = useCallback(async (currentMessages: Message[], service: string): Promise<void> => {
+  const generateAnswer = useCallback(async (currentMessages: Message[], service: string, chatId?: string): Promise<void> => {
+    console.log(chatId)
     dispatch({ type: 'SET_LOADING', isLoading: true });
     const lastMessage = currentMessages[currentMessages.length - 1].content;
     try {
       switch (service) {
         case "rag":
           // HyDE Generation
-          const hydeText = await generateHydeText(lastMessage);
+          // const hydeText = await generateHydeText(lastMessage);
 
-          // Context Retrieval
-          let context = "No relevant context found.";
-          let rag_urls: { title: string, citation: string }[] = [];
-          try {
-            const contextData = await fetchContext(hydeText);
-            context = contextData.context;
-            rag_urls = contextData.citations || [];
-          } catch {
-            addToast({ title: "Failed to get response from server" });
-          }
+          // // Context Retrieval
+          // let context = "No relevant context found.";
+          // let rag_urls: { title: string, citation: string }[] = [];
+          // try {
+          //   const contextData = await fetchContext(hydeText);
+          //   context = contextData.context;
+          //   rag_urls = contextData.citations || [];
+          // } catch {
+          //   addToast({ title: "Failed to get response from server" });
+          // }
 
-          // LLM Streaming
-          const response = streamAnswer({
-            messages: state.messages,
-            context,
-            lastMessage,
-          });
+          // // LLM Streaming
+          // const response = streamAnswer({
+          //   messages: state.messages,
+          //   context,
+          //   lastMessage,
+          // });
+
+          const rag_response = await streamMcpAnswer(lastMessage, "8001", "/v1/rag/generate",  chatId);
 
           // Add initial empty message for the role "assistant"
           addAssistantMessage(dispatch, service)
 
-          // Update the message with content while streaming
-          await streamAndUpdate({
-            stream: response.textStream,
+          // Extract the citations and update the message with content while streaming
+          const { citations: rag_citations } = await streamAndUpdate({
+            stream: rag_response.textStream(),
             onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
             service: service
-          })
+          }) as { citations: { title: string; citation: string }[] };
 
           // Update the message with resource citations
-          if (rag_urls.length > 0) {
+          if (rag_citations && rag_citations.length > 0) {
             updateLastMessage(dispatch, messagesRef, {
-              references: rag_urls.map(item => ({
+              references: rag_citations.map(item => ({
                 title: item.title,
                 citation: item.citation,
               })),
@@ -112,8 +114,32 @@ export const useAnswerGeneration = () => {
           }
           break
 
+          case "search":
+            const search_response = await streamMcpAnswer(lastMessage, "8002", "/v1/search", chatId);
+  
+            // Add initial empty message for the role "assistant"
+            addAssistantMessage(dispatch, service)
+  
+            // Extract the citations and update the message with content while streaming
+            const { citations } = await streamAndUpdate({
+              stream: search_response.textStream(),
+              onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
+              service: service
+            }) as { citations: { title: string; citation: string }[] };
+  
+            // Update the message with resource citations
+            if (citations.length > 0) {
+              updateLastMessage(dispatch, messagesRef, {
+                references: citations.map(item => ({
+                  title: item.title,
+                  citation: item.citation,
+                })),
+              });
+            }
+            break
+
         case "tools":
-          const tool_response = await streamMcpAnswer(lastMessage, "/mcp/stocks");
+          const tool_response = await streamMcpAnswer(lastMessage, "8003", "/v1/mcp/stocks", chatId);
 
           // Add initial empty message for the role "assistant"
           addAssistantMessage(dispatch, service)
@@ -124,30 +150,6 @@ export const useAnswerGeneration = () => {
             onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
             service: service
           })
-          break
-
-        case "search":
-          const search_response = await streamMcpAnswer(lastMessage, "/mcp/search");
-
-          // Add initial empty message for the role "assistant"
-          addAssistantMessage(dispatch, service)
-
-          // Extract the citations and update the message with content while streaming
-          const { citations } = await streamAndUpdate({
-            stream: search_response.textStream(),
-            onContent: (content: string) => updateLastMessage(dispatch, messagesRef, { content }),
-            service: service
-          }) as { citations: { title: string; citation: string }[] };
-
-          // Update the message with resource citations
-          if (citations.length > 0) {
-            updateLastMessage(dispatch, messagesRef, {
-              references: citations.map(item => ({
-                title: item.title,
-                citation: item.citation,
-              })),
-            });
-          }
           break
 
         default:

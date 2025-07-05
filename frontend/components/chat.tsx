@@ -1,11 +1,10 @@
 "use client";
 
-import { Button } from "@heroui/react";
-import React, { useCallback, useMemo, useContext, useState, useRef, useEffect } from "react";
+import React, { useContext, useRef, useEffect } from "react";
 import { Messages } from "./messages";
 import ChatContext from "../contexts/chat-context";
 import TextInput from "./text-input";
-import { IconArrowUp, IconTool, IconFileText } from "@tabler/icons-react";
+import { IconTool, IconFileText } from "@tabler/icons-react";
 import InfoCard from "./info-card";
 
 export const Chat = () => {

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from src.models import ChatRequest
 from ..stocks_mcp.client import agent
 import json
 
@@ -10,14 +10,12 @@ router = APIRouter(
     tags=["Stock MCP"]
 )
 
-class MCPRequest(BaseModel):
-    question: str
 
 @router.post('/stocks')
-async def stocks_mcp(request: MCPRequest):
+async def stocks_mcp(request: ChatRequest):
     async def generate_response():
         urls = []
-        async for chunk, isTool in agent(request.question):
+        async for chunk, isTool in agent(request.question, request.chatId):
             if chunk:
                 if isTool:
                     # This is a tool call result (URLs)

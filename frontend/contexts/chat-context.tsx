@@ -7,7 +7,7 @@ interface ChatContextType {
     input: string;
     messages: Message[];
     isLoading: boolean;
-    generateAnswer: (messages: Message[], state: string) => Promise<void>;
+    generateAnswer: (messages: Message[], state: string, chatId?: string) => Promise<void>;
     history: History[];
     dispatch: React.Dispatch<Action>;
     activeChatId: string;

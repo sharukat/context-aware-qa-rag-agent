@@ -63,8 +63,5 @@ export async function streamAndUpdate({
       onContent(fullContent);
     }
   }
-  if (service === "rag" || service === "tools") {
-    return {};
-  }
   return { citations };
 }

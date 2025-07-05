@@ -71,7 +71,7 @@ export default function TextInput() {
         context.dispatch({ type: 'SET_MESSAGES', messages: updatedMessages });
 
         try {
-            await context.generateAnswer(updatedMessages, option);
+            await context.generateAnswer(updatedMessages, option, context.activeChatId);
             if (context.activeChatId) {
                 context.updateHistory(context.activeChatId);
             }

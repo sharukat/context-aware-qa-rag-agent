@@ -1,16 +1,74 @@
 services:
-  api:
-    container_name: ai-service
-    build:
-      context: .
+  rag-service:
+    container_name: rag-container
+    build: 
+      context: ./microservices/rag_service
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     env_file:
       - .env
     volumes:
-      - ./src:/app/src
+      - ./microservices/rag_service/src:/app/src
       - ./uploads:/app/uploads
       - ./qdrant:/app/qdrant
     restart: unless-stopped
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network
+    depends_on:
+      - search-service
+
+  search-service:
+    container_name: search-container
+    build: 
+      context: ./microservices/search_service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./microservices/search_service/src:/app/src
+    restart: unless-stopped
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network
+
+  stocks-service:
+    container_name: stocks-container
+    build: 
+      context: ./microservices/stocks_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./microservices/stocks_service/src:/app/src
+    restart: unless-stopped
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network
+  
+  file-upload-service:
+    container_name: file-upload-container
+    build: 
+      context: ./microservices/file_upload_service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./microservices/file_upload_service/src:/app/src
+      - ./uploads:/app/uploads
+      - ./qdrant:/app/qdrant
+    restart: unless-stopped
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from src.models import ChatRequest
 from ..search_mcp.client import agent
 import json
 
@@ -14,14 +14,12 @@ router = APIRouter(
     tags=["Tavily Search MCP"]
 )
 
-class MCPRequest(BaseModel):
-    question: str
 
 @router.post('/search')
-async def search_mcp(request: MCPRequest):
+async def search_mcp(request: ChatRequest):
     async def generate_response():
         urls = []
-        async for chunk, isTool in agent(request.question):
+        async for chunk, isTool in agent(request.question, request.chatId):
             if chunk and isTool is True:
                 chunk_dict = json.loads(chunk)
                 if isinstance(chunk_dict, dict) and "results" in chunk_dict:
