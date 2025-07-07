@@ -89,7 +89,7 @@ This service enables real-time web search via the chat interface. It uses a Lang
 ### 📊 Stocks MCP Service
 This service supports conversational access to stock prices and company data. It utilizes a LangGraph React agent connected to a custom MCP toolset, which interfaces with Yahoo Finance APIs. The LLM is guided through tool usage to fetch structured, up-to-date financial information on demand.
 
-### File-upload Service
+### 📂 File-upload Service
 This service manages PDF ingestion and vectorization. Upon upload, the PDF is parsed and semantically chunked. Each chunk is prefixed with search_document, then indexed into a Qdrant vector database allowing hybrid retrieval:
 - Dense embeddings via `Nomic Embedding`
 - Sparse embeddings via `BM25`
