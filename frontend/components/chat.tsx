@@ -41,7 +41,7 @@ export const Chat = () => {
                     // Centered layout when no messages
                     <div className="flex flex-1 flex-col items-center justify-center p-4 w-full">
                         <h1 className="max-w-4xl text-center py-5 font-semibold text-black text-xl md:text-2xl">
-                            Ask any question about the document?
+                            Your AI Assistant for Documents, Stocks, and the Web
                         </h1>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-10">
                             <InfoCard
