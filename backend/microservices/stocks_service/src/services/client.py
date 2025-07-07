@@ -1,11 +1,12 @@
 import os
 import logging
+import aiosqlite
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_groq import ChatGroq
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ server_params = StdioServerParameters(
     env=None,
 )
 
-checkpointer = InMemorySaver()
 
 async def agent(question: str, thread_id: str = None):
     """
@@ -45,6 +45,9 @@ async def agent(question: str, thread_id: str = None):
             - is_tool_call (bool): True if the chunk is from a tool call, False if it's content
     """
     async with stdio_client(server_params) as (read, write):
+        connection = await aiosqlite.connect("./database/history.sqlite", check_same_thread=False)
+        checkpointer = AsyncSqliteSaver(connection)
+
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools = await load_mcp_tools(session)

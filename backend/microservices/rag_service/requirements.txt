@@ -6,6 +6,8 @@ aiohttp==3.12.13
     # via langchain-community
 aiosignal==1.4.0
     # via aiohttp
+aiosqlite==0.21.0
+    # via rag-service (pyproject.toml)
 annotated-types==0.7.0
     # via pydantic
 anyio==4.9.0
@@ -378,6 +380,7 @@ types-requests==2.32.4.20250611
 typing-extensions==4.14.1
     # via
     #   aiosignal
+    #   aiosqlite
     #   anyio
     #   cohere
     #   fastapi

@@ -1,11 +1,10 @@
 import os
 import logging
 from langchain_groq import ChatGroq
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, Field
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,75 +17,11 @@ llm = ChatGroq(
 )
 
 
-class InMemoryHistory(BaseChatMessageHistory, BaseModel):
-    """In memory implementation of chat message history."""
-
-    messages: list[BaseMessage] = Field(default_factory=list)
-
-    def add_message(self, message: BaseMessage) -> None:
-        """Add a message to the store"""
-        self.messages.append(message)
-
-    def add_messages(self, messages: list[BaseMessage]) -> None:
-        """Add a list of messages to the store"""
-        self.messages.extend(messages)
-
-    def get_messages(self) -> list[BaseMessage]:
-        """Get all messages from the store"""
-        return self.messages
-
-    def clear(self) -> None:
-        self.messages = []
-
-
 class ResponseFormatter(BaseModel):
     """Always use this tool to structure your response to the user."""
 
     answer: str = Field(description="The answer to the user's question")
 
-
-def generateHyde(question: str) -> str:
-    """
-    This function creates a hypothetical answer to the question as if it were extracted from
-    a relevant document, which can be used for better document retrieval in RAG systems.
-
-    Args:
-        question (str): The user's question to generate a hypothetical answer for
-
-    Returns:
-        str: A hypothetical answer that could be found in a relevant document
-    """
-    system = "You are an expert in question answering. Imagine you are given the resource mentioned within the question.Provide a concise answer assuming you are provided with the mentioned document."
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                system,
-            ),
-            ("human", "{input}"),
-        ]
-    )
-    chain = prompt | llm.with_structured_output(ResponseFormatter)
-    response = chain.invoke({"input": question})
-    return response.answer
-
-
-store = {}
-
-
-def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
-    """
-    Retrieve or create a chat message history for a given session ID.
-
-    Args:
-        session_id (str): Unique identifier for the chat session
-
-    Returns:
-        BaseChatMessageHistory: Chat message history for the specified session
-    """
-    if session_id not in store:
-        store[session_id] = InMemoryHistory()
-    return store[session_id]
 
 
 async def generate(question: str, context: str, thread_id: str = None):
@@ -119,7 +54,11 @@ async def generate(question: str, context: str, thread_id: str = None):
     chain = prompt | llm
     chat = RunnableWithMessageHistory(
         chain,
-        get_by_session_id,
+        lambda session_id: SQLChatMessageHistory(
+            session_id=thread_id, 
+            connection_string="sqlite+aiosqlite:///./database/history.sqlite",
+            async_mode=True
+        ),
         input_messages_key="question",
         history_messages_key="history",
     )

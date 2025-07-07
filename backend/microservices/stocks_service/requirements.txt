@@ -6,6 +6,10 @@ aiohttp==3.12.13
     # via langchain-community
 aiosignal==1.4.0
     # via aiohttp
+aiosqlite==0.21.0
+    # via
+    #   stocker-service (pyproject.toml)
+    #   langgraph-checkpoint-sqlite
 annotated-types==0.7.0
     # via pydantic
 anyio==4.9.0
@@ -117,7 +121,10 @@ langgraph==0.5.1
 langgraph-checkpoint==2.1.0
     # via
     #   langgraph
+    #   langgraph-checkpoint-sqlite
     #   langgraph-prebuilt
+langgraph-checkpoint-sqlite==2.0.10
+    # via stocker-service (pyproject.toml)
 langgraph-prebuilt==0.5.1
     # via langgraph
 langgraph-sdk==0.1.72
@@ -251,6 +258,8 @@ sqlalchemy==2.0.35
     # via
     #   langchain
     #   langchain-community
+sqlite-vec==0.1.6
+    # via langgraph-checkpoint-sqlite
 sse-starlette==2.3.6
     # via mcp
 starlette==0.46.2
@@ -268,6 +277,7 @@ typer==0.16.0
 typing-extensions==4.14.1
     # via
     #   aiosignal
+    #   aiosqlite
     #   anyio
     #   beautifulsoup4
     #   fastapi

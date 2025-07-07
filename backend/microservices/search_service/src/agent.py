@@ -1,9 +1,11 @@
 import os
 import logging
+import aiosqlite
 from langchain_groq import ChatGroq
 from langchain_tavily import TavilySearch
 from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import InMemorySaver
+# from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,7 +19,6 @@ llm = ChatGroq(
     streaming=True
 )
 
-checkpointer = InMemorySaver()
 
 async def agent(question: str, thread_id: str = None):
     """
@@ -32,6 +33,9 @@ async def agent(question: str, thread_id: str = None):
             - content (str): Response content or tool result
             - is_tool_call (bool): True if the chunk is from a tool call, False if it's content
     """
+    connection = await aiosqlite.connect("./database/history.sqlite", check_same_thread=False)
+    checkpointer = AsyncSqliteSaver(connection)
+
     search_tool = TavilySearch(max_results=5, topic="general")
     agent = create_react_agent(
             model=llm, 

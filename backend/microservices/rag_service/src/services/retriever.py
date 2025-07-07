@@ -7,7 +7,7 @@ from langchain.retrievers import contextual_compression
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from langchain_qdrant import FastEmbedSparse
 from langchain_nomic import NomicEmbeddings
-from .generate import generateHyde
+# from .generate import generateHyde
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def retrieve_documents(question: str) -> List[Document]:
     c_retriever = contextual_compression.ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
-    # prefixed_question = f"search_query: {generateHyde(question)}"
+
     prefixed_question = f"search_query: {question}"
     reranked_docs = c_retriever.invoke(prefixed_question)
     max_relevance = 0
