@@ -120,11 +120,6 @@ Documents are processed using an `semantic chunking` strategy that:
 - Leverage `Nomic` embeddings to determine breakpoints
 - Automatically adjusts chunk sizes based semantics of the text
 
-#### Hypothetical Document Embeddings (HyDE)
-This system implements HyDE to improve retrieval relevance:
-1. The user query is expanded into a hypothetical document that might answer it
-2. The hypothetical embeddings are used to search for relevant document chunks
-
 #### Searching Strategy
 This system uses `Hybrid (Dense + Sparse)` embeddings search technique.
 1. Leverage `Nomic` embeddings for dense retrieval identifying semantic relationship.

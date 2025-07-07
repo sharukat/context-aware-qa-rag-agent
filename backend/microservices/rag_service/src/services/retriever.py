@@ -62,15 +62,19 @@ def retrieve_documents(question: str) -> List[Document]:
         path="./qdrant",
         retrieval_mode=RetrievalMode.HYBRID,
     )
-    retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
 
-    compressor = CohereRerank(model="rerank-v3.5", top_n=3)
+    compressor = CohereRerank(model="rerank-v3.5", top_n=5)
     c_retriever = contextual_compression.ContextualCompressionRetriever(
         base_compressor=compressor, base_retriever=retriever
     )
-    prefixed_question = f"search_query: {generateHyde(question)}"
+    # prefixed_question = f"search_query: {generateHyde(question)}"
+    prefixed_question = f"search_query: {question}"
     reranked_docs = c_retriever.invoke(prefixed_question)
-    filtered_docs = [
-        doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.1
-    ]
-    return repack_documents(filtered_docs)
+    max_relevance = 0
+    filtered_docs = []
+    for doc in reranked_docs:
+        max_relevance = max(max_relevance, doc.metadata["relevance_score"])
+        if doc.metadata["relevance_score"] > 0.5:
+            filtered_docs.append(doc)
+    return repack_documents(filtered_docs), max_relevance

@@ -37,13 +37,14 @@ async def rag_stream(request: ChatRequest):
     async def generate_response():
         try:
             # Retrieve documents
-            docs = retrieve_documents(request.question)
+            docs, max_relevance = retrieve_documents(request.question)
+            logger.info(f"Max relevance: {max_relevance}")
             logger.info(f"Length of docs: {len(docs)}")
             
             citations = []
             context = ""
             
-            if docs:
+            if max_relevance >= 0.5:
                 # Build context from documents
                 page_contents = []
                 cite_hash = set()
