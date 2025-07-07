@@ -11,6 +11,7 @@ interface State {
   isLoading: boolean;
   history: History[];
   historyIds: Set<string>;
+  selectedService: string;
 }
 
 export type Action =
@@ -20,7 +21,8 @@ export type Action =
   | { type: 'SET_HISTORY'; history: History[] }
   | { type: 'SET_HISTORY_IDS'; historyIds: Set<string> }
   | { type: 'RESET_MESSAGES' }
-  | { type: 'ADD_MESSAGE'; message: Message };
+  | { type: 'ADD_MESSAGE'; message: Message }
+  | { type: 'SET_SELECTED_SERVICE'; service: string };
 
 const initialState: State = {
   input: "",
@@ -28,6 +30,7 @@ const initialState: State = {
   isLoading: false,
   history: [],
   historyIds: new Set(),
+  selectedService: "tools",
 };
 
 function reducer(state: State, action: Action): State {
@@ -46,6 +49,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, messages: [] };
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.message] };
+    case 'SET_SELECTED_SERVICE':
+      return { ...state, selectedService: action.service };
     default:
       return state;
   }
@@ -70,28 +75,7 @@ export const useAnswerGeneration = () => {
     try {
       switch (service) {
         case "rag":
-          // HyDE Generation
-          // const hydeText = await generateHydeText(lastMessage);
-
-          // // Context Retrieval
-          // let context = "No relevant context found.";
-          // let rag_urls: { title: string, citation: string }[] = [];
-          // try {
-          //   const contextData = await fetchContext(hydeText);
-          //   context = contextData.context;
-          //   rag_urls = contextData.citations || [];
-          // } catch {
-          //   addToast({ title: "Failed to get response from server" });
-          // }
-
-          // // LLM Streaming
-          // const response = streamAnswer({
-          //   messages: state.messages,
-          //   context,
-          //   lastMessage,
-          // });
-
-          const rag_response = await streamMcpAnswer(lastMessage, "8001", "/v1/rag/generate",  chatId);
+          const rag_response = await streamMcpAnswer(lastMessage, "/v1/api/rag",  chatId);
 
           // Add initial empty message for the role "assistant"
           addAssistantMessage(dispatch, service)
@@ -115,7 +99,7 @@ export const useAnswerGeneration = () => {
           break
 
           case "search":
-            const search_response = await streamMcpAnswer(lastMessage, "8002", "/v1/search", chatId);
+            const search_response = await streamMcpAnswer(lastMessage, "/v1/api/search", chatId);
   
             // Add initial empty message for the role "assistant"
             addAssistantMessage(dispatch, service)
@@ -139,7 +123,7 @@ export const useAnswerGeneration = () => {
             break
 
         case "tools":
-          const tool_response = await streamMcpAnswer(lastMessage, "8003", "/v1/mcp/stocks", chatId);
+          const tool_response = await streamMcpAnswer(lastMessage, "/v1/api/stocks", chatId);
 
           // Add initial empty message for the role "assistant"
           addAssistantMessage(dispatch, service)
@@ -197,6 +181,10 @@ export const useAnswerGeneration = () => {
     });
   }, [state.history]);
 
+  const setSelectedService = useCallback((service: string) => {
+    dispatch({ type: 'SET_SELECTED_SERVICE', service });
+  }, []);
+
   return {
     ...state,
     dispatch,
@@ -204,5 +192,6 @@ export const useAnswerGeneration = () => {
     generateAnswer,
     addToHistory,
     updateHistory,
+    setSelectedService,
   };
 };

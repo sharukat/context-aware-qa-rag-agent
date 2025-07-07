@@ -10,7 +10,7 @@ export async function uploadFiles(files: File[]): Promise<{ message?: string; fi
   });
 
   try {
-    const response = await fetch(`${config.API_URL}:8004/v1/file-upload`, {
+    const response = await fetch(`${config.API_URL}/v1/api/file-upload`, {
       method: "POST",
       body: formData,
     });
@@ -29,8 +29,8 @@ export async function uploadFiles(files: File[]): Promise<{ message?: string; fi
 /**
  * Send question to the backend to use stock tools via MCP server tools
  */
-export async function streamMcpAnswer(question: string, port: string, endpoint: string, chatId?: string) {
-  const response = await fetch(`${config.API_URL}:${port}${endpoint}`, {
+export async function streamMcpAnswer(question: string, endpoint: string, chatId?: string) {
+  const response = await fetch(`${config.API_URL}${endpoint}`, {
     method: "POST",
     mode: "cors",
     headers: { "Content-Type": "application/json" },

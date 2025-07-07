@@ -20,6 +20,18 @@ llm = ChatGroq(
 checkpointer = InMemorySaver()
 
 async def agent(question: str, thread_id: str = None):
+    """
+    Create and execute a streaming agent for web search and response generation.
+    
+    Args:
+        question (str): The user's question to search for and answer
+        thread_id (str, optional): Unique identifier for maintaining conversation history.
+        
+    Yields:
+        tuple: (content, is_tool_call) where:
+            - content (str): Response content or tool result
+            - is_tool_call (bool): True if the chunk is from a tool call, False if it's content
+    """
     search_tool = TavilySearch(max_results=5, topic="general")
     agent = create_react_agent(
             model=llm, 

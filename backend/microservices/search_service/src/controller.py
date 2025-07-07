@@ -20,7 +20,18 @@ class ChatRequest(BaseModel):
 
 
 @router.post('/search')
-async def search_mcp(request: ChatRequest):
+async def search(request: ChatRequest):
+    """
+    Perform web search and generate streaming response with citations.
+    
+    Args:
+        request (ChatRequest): Request containing the question and chat ID
+        
+    Returns:
+        StreamingResponse: Server-Sent Events (SSE) stream containing:
+            - 'content': Generated response chunks from the agent
+            - 'citations': List of search result URLs with titles
+    """
     logger.info("Executing search microservice")
     async def generate_response():
         urls = []

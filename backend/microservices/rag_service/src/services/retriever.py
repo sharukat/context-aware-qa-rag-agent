@@ -18,7 +18,17 @@ os.environ["NOMIC_API_KEY"] = os.getenv("NOMIC_API_KEY")
 dense_embeddings = NomicEmbeddings(model="nomic-embed-text-v1.5")
 sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25")
 
+
 def repack_documents(documents: List[Document]) -> List[Document]:
+    """
+    Sort documents by relevance score in ascending order.
+
+    Args:
+        documents (List[Document]): List of documents to sort
+
+    Returns:
+        List[Document]: Sorted list of documents by relevance score (ascending)
+    """
     try:
         return sorted(
             documents,
@@ -29,7 +39,22 @@ def repack_documents(documents: List[Document]) -> List[Document]:
         logging.info(e)
         raise ValueError(f"Error sorting documents: {e}")
 
+
 def retrieve_documents(question: str) -> List[Document]:
+    """
+    This function implements a multi-stage retrieval process:
+    1. Generates a hypothetical answer using HyDE
+    2. Performs hybrid search on the vector database
+    3. Reranks results using Cohere's rerank-v3.5 model
+    4. Filters documents by relevance score threshold
+    5. Sorts final results by relevance
+
+    Args:
+        question (str): The user's question to find relevant documents for
+
+    Returns:
+        List[Document]: List of relevant documents sorted by relevance score
+    """
     vectordb = QdrantVectorStore.from_existing_collection(
         embedding=dense_embeddings,
         sparse_embedding=sparse_embeddings,
@@ -45,5 +70,7 @@ def retrieve_documents(question: str) -> List[Document]:
     )
     prefixed_question = f"search_query: {generateHyde(question)}"
     reranked_docs = c_retriever.invoke(prefixed_question)
-    filtered_docs = [doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.1]
+    filtered_docs = [
+        doc for doc in reranked_docs if doc.metadata["relevance_score"] > 0.1
+    ]
     return repack_documents(filtered_docs)

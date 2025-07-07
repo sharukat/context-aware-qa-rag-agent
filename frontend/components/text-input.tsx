@@ -30,12 +30,11 @@ const TABS = [
 export default function TextInput() {
     const context = useContext(ChatContext);
     const [dbLoading, setDbLoading] = useState(false);
-    const [option, setOption] = useState("tools");
     const [files, setFiles] = useState<File[]>([]);
 
     const handleFileUpload = async (files: File[]) => {
         setFiles(files);
-        
+
         // Automatically upload files to DB when selected
         if (files.length > 0) {
             setDbLoading(true);
@@ -71,14 +70,14 @@ export default function TextInput() {
         context.dispatch({ type: 'SET_MESSAGES', messages: updatedMessages });
 
         try {
-            await context.generateAnswer(updatedMessages, option, context.activeChatId);
+            await context.generateAnswer(updatedMessages, context.selectedService, context.activeChatId);
             if (context.activeChatId) {
                 context.updateHistory(context.activeChatId);
             }
         } catch (error) {
             console.error("Error generating response:", error);
         }
-    }, [context, context.activeChatId, option]);
+    }, [context.input, context.messages, context.activeChatId, context.selectedService, context.generateAnswer, context.updateHistory]);
 
     return (
         <form
@@ -95,7 +94,7 @@ export default function TextInput() {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            if (context.input && !context.isLoading && context.dbStatus) {
+                            if (context.input && !context.isLoading) {
                                 const form = e.currentTarget.form;
                                 if (form) {
                                     form.requestSubmit();
@@ -109,9 +108,9 @@ export default function TextInput() {
                         aria-label="Options"
                         color="primary"
                         variant="bordered"
-                        radius="full"
-                        selectedKey={option}
-                        onSelectionChange={(key) => setOption(String(key))}
+                        radius="lg"
+                        selectedKey={context.selectedService}
+                        onSelectionChange={(key) => context.setSelectedService(String(key))}
                     >
                         {TABS.map((tab) => (
                             <Tab
@@ -126,7 +125,7 @@ export default function TextInput() {
                         ))}
                     </Tabs>
                     <div className="z-10 flex flex-row gap-2">
-                        <FileUpload state={option !== "rag"} onChange={handleFileUpload} isLoading={dbLoading} />
+                        <FileUpload state={context.selectedService !== "rag"} onChange={handleFileUpload} isLoading={dbLoading} />
                         <Button
                             className="z-10 bg-gray-900"
                             isLoading={context.isLoading}

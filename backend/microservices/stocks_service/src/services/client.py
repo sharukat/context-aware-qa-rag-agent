@@ -31,6 +31,19 @@ server_params = StdioServerParameters(
 checkpointer = InMemorySaver()
 
 async def agent(question: str, thread_id: str = None):
+    """
+    This function establishes a connection to an MCP server, loads available tools,
+    and creates a ReAct agent that can use those tools to answer questions.
+    
+    Args:
+        question (str): The user's question to answer using MCP server tools
+        thread_id (str, optional): Unique identifier for maintaining conversation history.
+        
+    Yields:
+        tuple: (content, is_tool_call) where:
+            - content (str): Response content or tool result from MCP server
+            - is_tool_call (bool): True if the chunk is from a tool call, False if it's content
+    """
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()

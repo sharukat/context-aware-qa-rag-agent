@@ -12,6 +12,12 @@ def load_embedding_models():
     return dense_embeddings, sparse_embeddings
 
 def clean_folder(folder):
+    """
+    Remove all files and subdirectories from the specified folder.
+    
+    Args:
+        folder (str): Path to the folder to clean
+    """
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         try:

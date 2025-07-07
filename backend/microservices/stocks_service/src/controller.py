@@ -21,6 +21,18 @@ class ChatRequest(BaseModel):
 
 @router.post('/stocks')
 async def stocks_mcp(request: ChatRequest):
+    """ 
+    This endpoint uses an MCP server-based approach to provide stock market information,
+    analysis, and data.
+    
+    Args:
+        request (ChatRequest): Request containing the question and chat ID
+        
+    Returns:
+        StreamingResponse: Server-Sent Events (SSE) stream containing:
+            - 'content': Generated response chunks with stock analysis
+            - 'urls': List of source URLs with titles from financial sources
+    """
     logger.info("Executing stocks microservice")
     async def generate_response():
         urls = []

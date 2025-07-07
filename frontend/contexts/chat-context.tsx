@@ -14,6 +14,8 @@ interface ChatContextType {
     updateHistory: (chatId: string) => void;
     dbStatus: boolean;
     setDbStatus: (status: boolean) => void;
+    selectedService: string;
+    setSelectedService: (service: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType>({
@@ -27,6 +29,8 @@ const ChatContext = createContext<ChatContextType>({
         updateHistory: () => {},
         dbStatus: false,
         setDbStatus: () => {},
+        selectedService: "tools",
+        setSelectedService: () => {},
     }
 );
 

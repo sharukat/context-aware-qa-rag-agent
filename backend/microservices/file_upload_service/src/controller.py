@@ -24,6 +24,17 @@ router = APIRouter(
 
 @router.post('/file-upload', response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def vectordb(files: List[UploadFile] = File(...)):
+    """    
+    This endpoint accepts multiple files, saves them to the upload directory,
+    cleans existing data, and creates a vector database collection from the uploaded files.
+    
+    Args:
+        files (List[UploadFile]): List of files to upload and process.
+    
+    Returns:
+        UploadResponse: Response containing upload status, list of processed files,
+                        and count of successfully uploaded files.
+    """
     logger.info("Executing file upload microservice")
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")

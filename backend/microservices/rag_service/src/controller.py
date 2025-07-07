@@ -18,6 +18,21 @@ router = APIRouter(
 
 @router.post('/generate')
 async def rag_stream(request: ChatRequest):    
+    """
+    This endpoint implements a Retrieval-Augmented Generation (RAG) system that:
+    1. Retrieves relevant documents from the vector database based on the question
+    2. Falls back to web search if no documents are found
+    3. Provides citations for the sources used
+    
+    Args:
+        request (ChatRequest): Request containing the question and chat ID
+        
+    Returns:
+        StreamingResponse: Server-Sent Events (SSE) stream containing:
+            - 'content': Generated response chunks
+            - 'citations': List of source citations with title and page numbers
+            - 'error': Error message if generation fails
+    """
     logger.info("Executing RAG microservice")
     async def generate_response():
         try:

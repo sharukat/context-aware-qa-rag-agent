@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Sidebar, SidebarBody } from "../components/ui/sidebar";
 import { cn } from "../lib/utils";
-import { Button } from "@heroui/react";
+import { Button, Divider } from "@heroui/react";
 import ChatContext from "../contexts/chat-context";
 import { Chat } from "../components/chat";
 import { useAnswerGeneration } from "../hooks/use-generate";
@@ -25,6 +25,8 @@ export default function ChatPage() {
         addToHistory,
         updateHistory,
         dispatch,
+        selectedService,
+        setSelectedService,
     } = useAnswerGeneration();
 
     const handleNewChat = () => {
@@ -50,8 +52,10 @@ export default function ChatPage() {
             dispatch,
             activeChatId,
             updateHistory,
-            dbStatus, 
+            dbStatus,
             setDbStatus,
+            selectedService,
+            setSelectedService,
         }}>
             <div
                 className={cn(
@@ -61,29 +65,35 @@ export default function ChatPage() {
                 <Sidebar open={open} setOpen={setOpen}>
                     <SidebarBody className="justify-between gap-10">
                         <div className="flex flex-col overflow-y-auto overflow-x-hidden">
-                            <Button
-                                className="font-bold mb-3"
-                                color="default"
-                                radius="full"
-                                isIconOnly
-                                size="sm"
-                            >
-                                <IconMenu4 />
-                            </Button>
-                            {(open) && (
-                                <div className="flex flex-col flex-1">
+                            <div className="flex flex-row justify-between items-center mb-5">
+                                <Button
+                                    className="font-bold"
+                                    color="default"
+                                    radius="full"
+                                    isIconOnly
+                                    size="sm"
+                                >
+                                    <IconMenu4 />
+                                </Button>
+                                {(open) && (
                                     <Button
-                                        className="font-bold mb-3"
-                                        color="success"
-                                        radius="full"
+                                        className="font-bold"
+                                        color="primary"
+                                        radius="lg"
                                         size="md"
                                         onPress={handleNewChat}
                                         startContent={<IconPlus />}
                                     >
                                         New Chat
                                     </Button>
+                                )}
+                            </div>
+
+                            {(open) && (
+                                <>
                                     <span className="font-bold text-center">Chat History</span>
-                                </div>
+                                    <Divider className="my-4" />
+                                </>
                             )}
                             {(open) && (
                                 <div className="flex flex-col gap-2 mt-2">

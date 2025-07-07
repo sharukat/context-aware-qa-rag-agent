@@ -34,7 +34,7 @@ export default function FileUpload({ state, onChange, isLoading = false }: Props
                             key={"file" + idx}
                             layoutId={idx === 0 ? "file-upload" : "file-upload-" + idx}
                             className={cn(
-                                "relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start p-1 w-full rounded-full",
+                                "relative overflow-hidden z-40 bg-white flex flex-col items-start justify-start p-1 w-full rounded-xl",
                                 "shadow-sm"
                             )}
                         >
@@ -51,7 +51,7 @@ export default function FileUpload({ state, onChange, isLoading = false }: Props
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     layout
-                                    className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-white shadow-input"
+                                    className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-xs text-neutral-600 shadow-input"
                                 >
                                     {(file.size / (1024 * 1024)).toFixed(2)} MB
                                 </motion.p>
