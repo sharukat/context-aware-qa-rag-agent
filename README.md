@@ -1,83 +1,113 @@
-# Chat with PDF: AI-Powered Document Intelligence
+# AI-Powered Chat with Documents, Stocks & Web Intelligence
 
-An interactive web application that lets users upload any PDF and chat with it using Retrieval-Augmented Generation (RAG). Built to extract insights and answer questions with the power of Large Language Models (LLMs).
+An interactive web application that enables users to:
+- 💬 Chat with any uploaded PDF using Retrieval-Augmented Generation (RAG) for contextual, document-based answers.
+- 📈 Retrieve stock prices and company information via MCP agents.
+- 🌐 Search the web when additional or external information is required.
+
+Powered by Large Language Models (LLMs), the app intelligently extracts insights and answers questions using contextual information from data sources. It features a fallback mechanism to web search when the uploaded documents do not contain sufficient or relevant information — ensuring responses remain complete and reliable.
+
+## 🏗️ Architecture
+![diagram](https://github.com/user-attachments/assets/37b02fd0-6c82-4772-8c8f-2941cf514c74)
 
 ## 🌱 Motivation
-Extracting meaningful information from dense PDFs is often slow and inefficient. This application bridges that gap by combining vector search with the reasoning capabilities of large language models to provide fast, accurate, and context-aware responses to user queries. Whether it’s technical manuals, research papers, or contracts — this tool empowers users to engage with documents conversationally and intelligently.
+Extracting meaningful information from dense PDFs, tracking stock-related data, or finding reliable answers on the web can be time-consuming and fragmented. This application bridges that gap by combining Retrieval-Augmented Generation (RAG) with the reasoning capabilities of Large Language Models (LLMs) — enabling users to ask questions naturally and get fast, context-aware responses. Whether you’re exploring technical documents, retrieving real-time stock data via agents, or searching the web for up-to-date information, this tool acts as a unified conversational interface. 
 
 ## 🚀 Getting Started
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/sharukat/chatpdf.git
-cd chatpdf
+git clone https://github.com/sharukat/context-aware-qa-rag-agent.git
+cd context-aware-qa-rag-agent
 ```
 
 ### Frontend Setup (Next.js)
+Go to the frontend folder: `cd frontend`.
 
-1. Install dependencies:
+1. Create a `.env` file in the frontend directory with the following content:
+```
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
+
+2. Install dependencies and build:
 ```bash
-npm install
-```
-
-2. Create a `.env.local` file in the frontend directory with the following content:
-```
-NEXT_PUBLIC_API_URL=http://localhost:5328
-GROQ_API_KEY=your_groq_api_key_here
+pnpm install
+pnpm build
 ```
 
 3. Start the server:
+```bash
+pnpm start
+```
 
 The Next.js frontend will be available at http://localhost:3000.
 
-### Backend Setup (Flask)
-
-1. Create and activate a virtual environment:
-```bash
-python -m venv venv
-
-source venv/bin/activate
-```
-
-2. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Create a `.env` file in the backend directory with the following content:
+### Backend Setup
+Go to the backend folder: `cd backend`.
+1. Create a `.env` file in the backend directory with the following content:
 ```
 COHERE_API_KEY=your_cohere_api_key_here
 NOMIC_API_KEY=your_nomic_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 ```
 
-4. Start the Flask server:
+#### Go API Gateway
+2. The repository already contains the executable binary. Go to `cd api-gateway` and run:
 ```bash
-cd api
-python3 index.py
-```
-OR
-```bash
-cd api
-flask run --port=5328
+./bin/app
 ```
 
-The Flask backend will be available at http://localhost:5328.
+This will start the go server which servers in port `8080`.
+
+#### Microservices
+Ensure you have docker installed on your system.
+
+3. Start the docker containers:
+```bash
+docker-compose up -d
+```
+
+4. Check the running docker containers:
+```bash
+docker ps
+```
+
+You will see four docker containers running.
+- `rag-container`
+- `search-container`
+- `stocks-container`
+- `file-upload-container`
+
+## Microservices
+### 🧾 RAG Document Service
+This service powers document-based question answering using Retrieval-Augmented Generation (RAG). It employs the HyDE (Hypothetical Document Embeddings) technique to generate a hypothetical answer, which is then used to retrieve semantically relevant context from the vector database. The retrieved context is passed to the LLM, which responds with a grounded answer, including source document references and page numbers. If the document lacks sufficient information, the service seamlessly falls back to the Web Search Service, ensuring the user still receives a reliable and informed response.
+
+### 🌐 Web Search Service
+This service enables real-time web search via the chat interface. It uses a LangGraph React agent integrated with the Tavily Search API, allowing the LLM to search the web and retrieve relevant, citation-backed content. Responses are grounded in retrieved sources and include citations for transparency and trustworthiness. 
+
+### 📊 Stocks MCP Service
+This service supports conversational access to stock prices and company data. It utilizes a LangGraph React agent connected to a custom MCP toolset, which interfaces with Yahoo Finance APIs. The LLM is guided through tool usage to fetch structured, up-to-date financial information on demand.
+
+### File-upload Service
+This service manages PDF ingestion and vectorization. Upon upload, the PDF is parsed and semantically chunked. Each chunk is prefixed with search_document, then indexed into a Qdrant vector database allowing hybrid retrieval:
+- Dense embeddings via `Nomic Embedding`
+- Sparse embeddings via `BM25`
+
+This hybrid approach enables high-quality retrieval across both semantic and keyword-based queries, significantly improving the relevance of contextual results.
 
 ## Technology Stack
 <p align="center">
   <a href="https://go-skill-icons.vercel.app/">
     <img
-      src="https://go-skill-icons.vercel.app/api/icons?i=python,typescript,flask,nextjs,tailwindcss,langchain,groq,deepseek,"
+      src="https://go-skill-icons.vercel.app/api/icons?i=python,golang,typescript,nextjs,tailwindcss,fastapi,langchain,groq,docker"
     />
   </a>
 </p>
 
 ### LLM Models
 
-This application leverages two large language models (LLMs) through `Groq`:
-
-- `llama-3.3-70b-versatil`: Used for Hypothetical Document Embedding (HyDE).
-- `deepseek-r1-distill-llama-70b`: Used for final answer generationg when contextual information is provided.
+This application leverages `llama-3.3-70b-versatil` large language model (LLM) through `Groq`.
 
 ### Embedding Models
 
@@ -111,14 +141,13 @@ This system uses `Hybrid (Dense + Sparse)` embeddings search technique.
 
 ## API Documentation
 
-The backend exposes the following endpoints:
+The API gateway exposes the following endpoints:
 
-- `POST /api/upload`: Upload new documents, perform semantic chunking, and create a vector database.
-- `POST /api/getdocuments`: Retrieval of relevant contextual information from a vector database.”
+- `POST /v1/api/rag`: RAG Document Service.
+- `POST /v1/api/stocks`: Stocks MCP Service.
+- `POST /v1/api/search`: Web Search Service.
+- `POST /v1/api/file-upload`: File-Upload Service.
 
-## 👏 Contributing
-I would love your help! Contribute by forking the repo and opening pull requests.
-
-## License
-
-[MIT License](LICENSE)
+## Upcoming Improvements
+- Semantic Redis caching to reduce latency and inference cost
+- Guardrails to prevent prompt injection and block inappropriate queries
