@@ -81,7 +81,7 @@ You will see four docker containers running.
 
 ## Microservices
 ### 🧾 RAG Document Service
-This service powers document-based question answering using Retrieval-Augmented Generation (RAG). It employs the HyDE (Hypothetical Document Embeddings) technique to generate a hypothetical answer, which is then used to retrieve semantically relevant context from the vector database. The retrieved context is passed to the LLM, which responds with a grounded answer, including source document references and page numbers. If the document lacks sufficient information, the service seamlessly falls back to the Web Search Service, ensuring the user still receives a reliable and informed response.
+This service powers document-based question answering using Retrieval-Augmented Generation (RAG). The user question is used to retrieve semantically relevant context from the vector database. The retrieved context is passed to the LLM, which responds with a grounded answer, including source document references and page numbers. If the document lacks sufficient information, the service seamlessly falls back to the Web Search Service, ensuring the user still receives a reliable and informed response.
 
 ### 🌐 Web Search Service
 This service enables real-time web search via the chat interface. It uses a LangGraph React agent integrated with the Tavily Search API, allowing the LLM to search the web and retrieve relevant, citation-backed content. Responses are grounded in retrieved sources and include citations for transparency and trustworthiness. 
